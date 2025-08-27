@@ -110,7 +110,7 @@ public class EmailGeneratorService {
             JsonNode rootNode = objectMapper.readTree(Optional.ofNullable(response).orElse("{}"));  // JsonNode is tree like structure makes java to understan
 
             JsonNode candidates = rootNode.path("candidates"); // AI thinks all possible solutions so it gives the response in candidates []
-            if (candidates.isArray() && !candidates.isEmpty()) {
+            if (candidates.isArray() && candidates.size() > 0) {
                 JsonNode first = candidates.get(0); // First response of AI is highly relevant to the topic so we extract this
 
                 JsonNode parts = first.path("content").path("parts"); // retrieval of data same as we sent
@@ -137,12 +137,22 @@ public class EmailGeneratorService {
      */
     private String buildPrompt(EmailRequest emailRequest) {
         StringBuilder prompt = new StringBuilder();
-        prompt.append("Generate a email reply for the following email content. Please don't generate subject line");
-        prompt.append("\n Original email: \n").append(emailRequest.getEmailContent());
+        String instructions = emailRequest.getInstructions();
 
-        if (emailRequest.getTone() != null && emailRequest.getEmailContent() != null && !emailRequest.getEmailContent().isEmpty()) {
-            prompt.append("Use a ").append(emailRequest.getTone()).append(" tone.");
+        // Check if instructions are provided, otherwise use a default
+        if (instructions != null && !instructions.isBlank()) {
+            prompt.append("You are given instructions follow them strictly no need to add extra things on your own just follow:").append(instructions);
+        } else {
+            // Updated default prompt: focused on generating content, not completing an email.
+            prompt.append("You are a direct and concise AI assistant. Based on the following content, generate a response. Do not add any salutations, sign-offs, or extra sentences. Only provide the main response.");
         }
+
+        if (emailRequest.getTone() != null && !emailRequest.getTone().isBlank()) {
+            prompt.append(" Use a ").append(emailRequest.getTone()).append(" tone.");
+        }
+
+        prompt.append("\n\nOriginal Content:\n").append(emailRequest.getEmailContent());
+
         return prompt.toString();
     }
 }
