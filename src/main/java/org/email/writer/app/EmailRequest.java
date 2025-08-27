@@ -11,4 +11,6 @@ public class EmailRequest {
     private String emailContent;
     // to convert the tone as per user's choice
     private String tone;
+    // to give instructions to the Model how we want this email to be written
+    private String instructions;
 }
