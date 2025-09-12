@@ -48,9 +48,14 @@ public class EmailGeneratorService {
      */
     public String generateEmailReply(EmailRequest emailRequest) {
         // Although we already checked in Controller class but still for safety
-        if (emailRequest == null || emailRequest.getEmailContent() == null || emailRequest.getEmailContent().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "emailContent must not be empty");
+//        if (emailRequest == null || emailRequest.getEmailContent() == null || emailRequest.getEmailContent().isBlank()) {
+//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "emailContent must not be empty");
+//        }
+        if (emailRequest == null || emailRequest.getInstructions() == null || emailRequest.getInstructions().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Instructions must not be empty");
         }
+
+
         // by any chance API key or API url is lost its system's fault so we need to tell the user too
         if (geminiAPIUrl == null || geminiAPIUrl.isBlank() || geminiAPIKey == null || geminiAPIKey.isBlank()) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Gemini API configuration is missing. Please set gemini.api.url and gemini.api.key");
@@ -98,7 +103,6 @@ public class EmailGeneratorService {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to call Gemini API: " + e.getMessage(), e);
         }
     }
-
     /**
      *
      * @param response which is also in JSON format as I said this is the way to communicate with AI models
@@ -136,23 +140,32 @@ public class EmailGeneratorService {
      * @return exact prompt of given text according to the need of user and this prompt will be sent to AI models.
      */
     private String buildPrompt(EmailRequest emailRequest) {
-        StringBuilder prompt = new StringBuilder();
-        String instructions = emailRequest.getInstructions();
-
-        // Check if instructions are provided, otherwise use a default
-        if (instructions != null && !instructions.isBlank()) {
-            prompt.append("You are given instructions follow them strictly no need to add extra things on your own just follow:").append(instructions);
-        } else {
-            // Updated default prompt: focused on generating content, not completing an email.
-            prompt.append("You are a direct and concise AI assistant. Based on the following content, generate a response. Do not add any salutations, sign-offs, or extra sentences. Only provide the main response.");
-        }
-
-        if (emailRequest.getTone() != null && !emailRequest.getTone().isBlank()) {
-            prompt.append(" Use a ").append(emailRequest.getTone()).append(" tone.");
-        }
-
-        prompt.append("\n\nOriginal Content:\n").append(emailRequest.getEmailContent());
-
-        return prompt.toString();
+    StringBuilder prompt = new StringBuilder();
+    
+    // Base system message
+    prompt.append("You are an email writing assistant. ");
+    
+    if (emailRequest.getEmailContent() == null || emailRequest.getEmailContent().isBlank()) {
+        prompt.append("Generate a completely new email based on the following instructions. ")
+              .append("Do not acknowledge or write 'noted' - directly write the email content.\n\n");
+    } else {
+        prompt.append("Modify or respond to the existing email content based on the following instructions. ")
+              .append("Do not acknowledge the instructions - directly provide the modified/response email.\n\n");
     }
+
+    // Add instructions
+    prompt.append("Instructions:\n").append(emailRequest.getInstructions());
+
+    // Add tone if provided
+    if (emailRequest.getTone() != null && !emailRequest.getTone().isBlank()) {
+        prompt.append("\n\nUse a ").append(emailRequest.getTone()).append(" tone in the response.");
+    }
+
+    // Add original content if exists
+    if (emailRequest.getEmailContent() != null && !emailRequest.getEmailContent().isBlank()) {
+        prompt.append("\n\nOriginal Email Content:\n").append(emailRequest.getEmailContent());
+    }
+
+    return prompt.toString();
+}
 }

@@ -3,6 +3,8 @@ package org.email.writer.app;
 import lombok.AllArgsConstructor; // To reduce boilerplate code by injecting getter and setter at runtime
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import java.util.Map;
+import java.util.LinkedHashMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -34,15 +36,24 @@ public class EmailGeneratorControlller {
      * if it is null or empty it throws bad request otherwise it call generateEmailReply and stores in response and
      * send back the  response to the user
      */
-    public ResponseEntity<String> generateEmail(@RequestBody EmailRequest emailRequest) throws ResponseStatusException {
+    public ResponseEntity<Map<String, Object>> generateEmail(@RequestBody EmailRequest emailRequest) throws ResponseStatusException {
         /*
         RequestBody accepts request from user
          */
 
-        if (emailRequest == null || emailRequest.getEmailContent() == null || emailRequest.getEmailContent().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "emailContent must not be empty");
+        if ((emailRequest == null) ||
+                ((emailRequest.getEmailContent() == null || emailRequest.getEmailContent().isBlank())
+                        && (emailRequest.getInstructions() == null || emailRequest.getInstructions().isBlank()))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Either emailContent or instruction must not be empty");
         }
         String response = emailGeneratorService.generateEmailReply(emailRequest);
-        return ResponseEntity.ok(response);
+
+        // wrapping response in a standard JSON format so frontend can reliably parse it
+        Map<String, Object> body = new LinkedHashMap<>(); // preserves insertion order in JSON
+        body.put("success", Boolean.TRUE);
+        body.put("data", Map.of(
+                "text", response
+        ));
+        return ResponseEntity.ok(body);
     }
 }

@@ -69,7 +69,7 @@ The Lekhak AI is a Chrome extension with a Spring Boot backend designed to simpl
 ### 2\. Frontend Setup (Chrome Extension)
 
 1.  **Clone the Repository:**
-
+    [Link](https://github.com/Priyadarshan-Garg/email-writer-frontend)
     ```bash
     git clone https://github.com/Priyadarshan-Garg/email-writer-frontend
     ```
