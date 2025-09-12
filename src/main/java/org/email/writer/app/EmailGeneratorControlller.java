@@ -37,23 +37,14 @@ public class EmailGeneratorControlller {
      * send back the  response to the user
      */
     public ResponseEntity<Map<String, Object>> generateEmail(@RequestBody EmailRequest emailRequest) throws ResponseStatusException {
-        /*
-        RequestBody accepts request from user
-         */
+    // Remove the validation here since service is handling it
+    String response = emailGeneratorService.generateEmailReply(emailRequest);
 
-        if ((emailRequest == null) ||
-                ((emailRequest.getEmailContent() == null || emailRequest.getEmailContent().isBlank())
-                        && (emailRequest.getInstructions() == null || emailRequest.getInstructions().isBlank()))) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Either emailContent or instruction must not be empty");
-        }
-        String response = emailGeneratorService.generateEmailReply(emailRequest);
-
-        // wrapping response in a standard JSON format so frontend can reliably parse it
-        Map<String, Object> body = new LinkedHashMap<>(); // preserves insertion order in JSON
-        body.put("success", Boolean.TRUE);
-        body.put("data", Map.of(
-                "text", response
-        ));
-        return ResponseEntity.ok(body);
-    }
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("success", Boolean.TRUE);
+    body.put("data", Map.of(
+            "text", response
+    ));
+    return ResponseEntity.ok(body);
+}
 }
